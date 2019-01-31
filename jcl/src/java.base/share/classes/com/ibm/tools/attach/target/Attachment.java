@@ -1,6 +1,5 @@
-/*[INCLUDE-IF Sidecar16]*/
 /*******************************************************************************
- * Copyright (c) 2009, 2018 IBM Corp. and others
+ * Copyright (c) 2009, 2019 IBM Corp. and others
  *
  * This program and the accompanying materials are made available under
  * the terms of the Eclipse Public License 2.0 which accompanies this
@@ -27,12 +26,14 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 /*[IF Sidecar19-SE]*/
@@ -199,7 +200,11 @@ final class Attachment extends Thread implements Response {
 							+ " " + attachError); //$NON-NLS-1$
 				}
 			} else if (cmd.startsWith(Command.GET_SYSTEM_PROPERTIES)) {
-				replyWithProperties(com.ibm.oti.vm.VM.getVMLangAccess().internalGetProperties());
+				Properties internalProperties = com.ibm.oti.vm.VM.getVMLangAccess().internalGetProperties();
+				List<String> jvmArguments = ManagementFactory.getRuntimeMXBean().getInputArguments();
+				String argumentString = String.join(" ", jvmArguments.toArray(new String[jvmArguments.size()])); //$NON-NLS-1$
+				internalProperties.put("sun.jvm.args", argumentString); //$NON-NLS-1$
+				replyWithProperties(internalProperties);
 			} else if (cmd.startsWith(Command.GET_AGENT_PROPERTIES)) {
 				replyWithProperties(AttachHandler.getAgentProperties());
 			} else if (cmd.startsWith(Command.START_LOCAL_MANAGEMENT_AGENT)) {
